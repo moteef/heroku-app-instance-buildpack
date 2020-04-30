@@ -1,0 +1,8 @@
+#!/bin/sh
+
+if [ -z "${APP_INSTANCE}" ]; then
+  echo "App instance: ${APP_INSTANCE}"
+  exit 0
+else
+  exit 1
+fi

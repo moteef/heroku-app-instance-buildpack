@@ -1,0 +1,44 @@
+#!/bin/bash
+
+set -e
+
+function indent() {
+  c='s/^/       /'
+  case $(uname) in
+    Darwin) sed -l "$c";;
+    *)      sed -u "$c";;
+  esac
+}
+
+BUILD_DIR=$1
+CACHE_DIR=$2
+ENV_DIR=$3
+
+BUILDPACK_DIR=$(cd "$(dirname "$0")"; cd ..; pwd)
+echo "BUILDPACK_DIR=$BUILDPACK_DIR"
+
+echo "BUILD_DIR=$BUILD_DIR"
+echo "ENV_DIR=$ENV_DIR"
+
+APP_INSTANCE=$(cat $ENV_DIR/APP_INSTANCE)
+echo "APP_INSTANCE=$APP_INSTANCE"
+
+INSTANCE_DIR=$BUILD_DIR/$APP_INSTANCE
+echo "INSTANCE_DIR=$INSTANCE_DIR"
+
+INSTANCE_PUBLIC_DIR=$INSTANCE_DIR/public
+PUBLIC_DIR=$BUILD_DIR/public
+
+if [ -d "$INSTANCE_PUBLIC_DIR" ]; then
+  echo "-----> copying files from public folder"
+  cp -v -r $INSTANCE_PUBLIC_DIR/* $PUBLIC_DIR 2>&1 | indent
+  echo "-----> done copying files from public folder"
+
+  echo "-----> merging app.json"
+  chmod +x $BUILDPACK_DIR/bin/jq-1.6
+
+  $BUILDPACK_DIR/bin/jq-1.6 -s ".[0] * .[1]" $BUILD_DIR/app.json $INSTANCE_DIR/app.json > tmp_app.json
+  mv tmp_app.json $BUILD_DIR/app.json
+
+  echo "-----> done merging app.json"
+fi
